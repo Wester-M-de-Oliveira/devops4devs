@@ -1,3 +1,4 @@
+# Deployment para PostgreSQL
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,24 +17,28 @@ spec:
           image: postgres:15.0
           ports:
             - containerPort: 5432
-          env:  
-          - name: POSTGRES_USER
-            value: "newsuser"
-          - name: POSTGRES_PASSWORD
-            value: "newspwd"
-          - name: POSTGRES_DB
-            value: "news"
+          env:
+            - name: POSTGRES_USER
+              value: "newsuser"
+            - name: POSTGRES_PASSWORD
+              value: "newspwd"
+            - name: POSTGRES_DB
+              value: "news"
 ---
+# Serviço para PostgreSQL
 apiVersion: v1
 kind: Service
 metadata:
   name: postgre
-spec:   
+spec:
   selector:
     app: postgre
   ports:
     - port: 5432
+      targetPort: 5432
+  type: ClusterIP
 ---
+# Deployment para aplicação Web
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -50,10 +55,10 @@ spec:
     spec:
       containers:
         - name: web
-          image: fabricioveronez/devops4devs-news:v3
+          image: westerm/news-oficina:latest
           ports:
             - containerPort: 8080
-          env: 
+          env:
             - name: DB_DATABASE
               value: "news"
             - name: DB_USERNAME
@@ -62,23 +67,24 @@ spec:
               value: "newspwd"
             - name: DB_HOST
               value: postgre
-            - name: AWS_ACCESS_KEY
-              value: {{AWS_ACCESS_KEY}}
-            - name: AWS_ACCESS_SECRET
-              value: {{AWS_ACCESS_SECRET}}
-            - name: AWS_S3_BUCKET_NAME
-              value: devops4devs-files
+            # - name: AWS_ACCESS_KEY
+            #   value: "minha-chave-acesso"
+            # - name: AWS_ACCESS_SECRET
+            #   value: "minha-chave-secreta"
+            # - name: AWS_S3_BUCKET_NAME
+            #   value: devops4devs-files
             - name: STORAGE_TYPE
-              value: S3
+              value: LOCAL
 ---
+# Serviço para aplicação Web
 apiVersion: v1
 kind: Service
 metadata:
   name: web
-spec:   
+spec:
   selector:
     app: web
   ports:
     - port: 80
       targetPort: 8080
-  type: LoadBalancer
+  type: NodePort
